@@ -1,6 +1,6 @@
 *
 !.gitignore
-!evo/
+!evo2/
 !main.py
 !requirements.txt
 venv/

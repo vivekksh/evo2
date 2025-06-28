@@ -1,7 +1,5 @@
 import sys
-
 import modal
-
 from pydantic import BaseModel
 
 class VariantRequest(BaseModel):
@@ -12,17 +10,30 @@ class VariantRequest(BaseModel):
 
 evo2_image = (
     modal.Image.from_registry(
-        "nvidia/cuda:12.4.0-devel-ubuntu22.04", add_python="3.12"
+        "nvidia/cuda:12.4.0-devel-ubuntu22.04", add_python="3.11"
     )
     .apt_install(
         ["build-essential", "cmake", "ninja-build",
-            "libcudnn8", "libcudnn8-dev", "git", "gcc", "g++"]
+            "libcudnn8", "libcudnn8-dev", "git", "gcc", "g++", "sed"]
     )
     .env({
         "CC": "/usr/bin/gcc",
         "CXX": "/usr/bin/g++",
     })
-    .run_commands("git clone --recurse-submodules https://github.com/ArcInstitute/evo2.git && cd evo2 && pip install .")
+    # Clone and modify the evo2 repository before installing
+    .run_commands(
+        # Clone the repository
+        "git clone --recurse-submodules https://github.com/ArcInstitute/evo2.git",
+
+        # Patch the tokenizer.py file to replace fromstring with frombuffer
+        "sed -i 's/np.fromstring(text, dtype=np.uint8)/np.frombuffer(text.encode(\\\"utf-8\\\"), dtype=np.uint8)/g' evo2/vortex/vortex/model/tokenizer.py",
+
+        # Install the modified package with specific versions
+        "cd evo2 && pip install . && cd ..",
+
+        # Downgrade NumPy to a version that's more compatible with our changes
+        "pip install numpy==1.24.4",
+    )
     .run_commands("pip uninstall -y transformer-engine transformer_engine")
     .run_commands("pip install 'transformer_engine[pytorch]==1.13' --no-build-isolation")
     .pip_install_from_requirements("requirements.txt")
@@ -32,7 +43,6 @@ app = modal.App("variant-analysis-evo2", image=evo2_image)
 
 volume = modal.Volume.from_name("hf_cache", create_if_missing=True)
 mount_path = "/root/.cache/huggingface"
-
 
 @app.function(gpu="H100", volumes={mount_path: volume}, timeout=1000)
 def run_brca1_analysis():
@@ -138,9 +148,9 @@ def run_brca1_analysis():
     optimal_threshold = -thresholds[optimal_idx]
 
     lof_scores = brca1_subset.loc[brca1_subset["class"]
-                                  == "LOF", "evo2_delta_score"]
+                                    == "LOF", "evo2_delta_score"]
     func_scores = brca1_subset.loc[brca1_subset["class"]
-                                   == "FUNC/INT", "evo2_delta_score"]
+                                    == "FUNC/INT", "evo2_delta_score"]
 
     lof_std = lof_scores.std()
     func_std = func_scores.std()
@@ -194,7 +204,6 @@ def run_brca1_analysis():
 
     return {'variants': brca1_subset.to_dict(orient="records"), "plot": plot_data, "auroc": auroc}
 
-
 @app.function()
 def brca1_example():
     import base64
@@ -218,7 +227,6 @@ def brca1_example():
         plt.axis("off")
         plt.show()
 
-
 def get_genome_sequence(position, genome: str, chromosome: str, window_size=8192):
     import requests
 
@@ -241,7 +249,7 @@ def get_genome_sequence(position, genome: str, chromosome: str, window_size=8192
 
     if "dna" not in genome_data:
         error = genome_data.get("error", "Unknown error")
-        raise Exception(f"UCSC API errpr: {error}")
+        raise Exception(f"UCSC API error: {error}")
 
     sequence = genome_data.get("dna", "").upper()
     expected_length = end - start
@@ -253,7 +261,6 @@ def get_genome_sequence(position, genome: str, chromosome: str, window_size=8192
         f"Loaded reference genome sequence window (length: {len(sequence)} bases)")
 
     return sequence, start
-
 
 def analyze_variant(relative_pos_in_window, reference, alternative, window_seq, model):
     var_seq = window_seq[:relative_pos_in_window] + \
@@ -283,17 +290,15 @@ def analyze_variant(relative_pos_in_window, reference, alternative, window_seq, 
         "classification_confidence": float(confidence)
     }
 
-
 @app.cls(gpu="H100", volumes={mount_path: volume}, max_containers=3, retries=2, scaledown_window=120)
 class Evo2Model:
     @modal.enter()
     def load_evo2_model(self):
-        from evo2 import Evo2
         print("Loading evo2 model...")
+        from evo2 import Evo2
         self.model = Evo2('evo2_7b')
         print("Evo2 model loaded")
 
-    # @modal.method()
     @modal.fastapi_endpoint(method="POST")
     def analyze_single_variant(self, request: VariantRequest):
         variant_position = request.variant_position
@@ -315,7 +320,7 @@ class Evo2Model:
             window_size=WINDOW_SIZE
         )
 
-        print(f"Fetched genome seauence window, first 100: {window_seq[:100]}")
+        print(f"Fetched genome sequence window, first 100: {window_seq[:100]}")
 
         relative_pos = variant_position - 1 - seq_start
         print(f"Relative position within window: {relative_pos}")
@@ -340,12 +345,10 @@ class Evo2Model:
 
         return result
 
-
 @app.local_entrypoint()
 def main():
     # Example of how you'd call the deployed Modal Function from your client
     import requests
-    import json    # brca1_example.remote()
 
     evo2Model = Evo2Model()
 

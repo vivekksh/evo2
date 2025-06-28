@@ -361,21 +361,359 @@ export async function analyzeVariantWithAPI({
   genomeId: string;
   chromosome: string;
 }): Promise<AnalysisResult> {
-  const queryParams = new URLSearchParams({
-    variant_position: position.toString(),
+  // Use local API route instead of direct Modal URL
+  const url = '/api/analyze-variant';
+
+  const requestBody = {
+    variant_position: position,
     alternative: alternative,
     genome: genomeId,
     chromosome: chromosome,
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody),
   });
-
-  const url = `${env.NEXT_PUBLIC_ANALYZE_SINGLE_VARIANT_BASE_URL}?${queryParams.toString()}`;
-
-  const response = await fetch(url, { method: "POST" });
 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error("Failed to analyze variant " + errorText);
   }
+  if (response.status === 429) {
+  throw new Error('API rate limit exceeded. Please try again later.');
+}
 
   return await response.json();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export async function analyzeVariantWithAPI({
+//   position,
+//   alternative,
+//   genomeId,
+//   chromosome,
+// }: {
+//   position: number;
+//   alternative: string;
+//   genomeId: string;
+//   chromosome: string;
+// }): Promise<AnalysisResult> {
+//   const url = env.NEXT_PUBLIC_ANALYZE_SINGLE_VARIANT_BASE_URL;
+
+//   // Debug logging
+//   console.log('API URL:', url);
+//   console.log('Request data:', { position, alternative, genomeId, chromosome });
+
+//   const requestBody = {
+//     variant_position: position,
+//     alternative: alternative,
+//     genome: genomeId,
+//     chromosome: chromosome,
+//   };
+
+//   console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
+//   try {
+//     const response = await fetch(url, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify(requestBody),
+//     });
+
+//     console.log('Response status:', response.status);
+//     console.log('Response ok:', response.ok);
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       console.error('Error response:', errorText);
+//       throw new Error("Failed to analyze variant " + errorText);
+//     }
+
+//     const result = await response.json();
+//     console.log('Success response:', result);
+//     return result;
+
+//   } catch (error) {
+//     console.error('Fetch error:', error);
+    
+//     // Check if it's a network error
+//     if (error instanceof TypeError && error.message === 'Failed to fetch') {
+//       throw new Error('Network error: Unable to connect to the API. Please check:\n1. API URL is correct\n2. API server is running\n3. CORS is properly configured\n4. No network connectivity issues');
+//     }
+    
+//     throw error;
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export async function analyzeVariantWithAPI({
+//   position,
+//   alternative,
+//   genomeId,
+//   chromosome,
+// }: {
+//   position: number;
+//   alternative: string;
+//   genomeId: string;
+//   chromosome: string;
+// }): Promise<AnalysisResult> {
+//   const url = env.NEXT_PUBLIC_ANALYZE_SINGLE_VARIANT_BASE_URL;
+
+//   // Create the request body instead of query parameters
+//   const requestBody = {
+//     variant_position: position,
+//     alternative: alternative,
+//     genome: genomeId,
+//     chromosome: chromosome,
+//   };
+
+//   const response = await fetch(url, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify(requestBody), // Send data in the body
+//   });
+
+//   if (!response.ok) {
+//     const errorText = await response.text();
+//     throw new Error("Failed to analyze variant " + errorText);
+//   }
+
+//   return await response.json();
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export async function analyzeVariantWithAPI({
+//   position,
+//   alternative,
+//   genomeId,
+//   chromosome,
+// }: {
+//   position: number;
+//   alternative: string;
+//   genomeId: string;
+//   chromosome: string;
+// }): Promise<AnalysisResult> {
+//   const queryParams = new URLSearchParams({
+//     variant_position: position.toString(),
+//     alternative: alternative,
+//     genome: genomeId,
+//     chromosome: chromosome,
+//   });
+
+//   const url = `${env.NEXT_PUBLIC_ANALYZE_SINGLE_VARIANT_BASE_URL}?${queryParams.toString()}`;
+
+//   const response = await fetch(url, { method: "POST" });
+
+//   if (!response.ok) {
+//     const errorText = await response.text();
+//     throw new Error("Failed to analyze variant " + errorText);
+//   }
+
+//   return await response.json();
+// }

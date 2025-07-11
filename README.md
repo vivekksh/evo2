@@ -113,12 +113,10 @@ npm run dev            # Start development server at http://localhost:3000
 
 ## References
 
-* **Evo2 Model Publication**: \[Link to peer-reviewed paper]
+* **Evo2 Model Publication**: \[[Link to peer-reviewed paper](https://github.com/ArcInstitute/evo2)]
 * **ClinVar API Documentation**: [https://www.ncbi.nlm.nih.gov/clinvar/](https://www.ncbi.nlm.nih.gov/clinvar/)
 * **UCSC Genome Browser API**: [https://genome.ucsc.edu/](https://genome.ucsc.edu/)
 
 ---
 
-## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
